@@ -5,23 +5,36 @@ if( isset( $_REQUEST[ 'Submit' ] ) ) {
 	$id = $_REQUEST[ 'id' ];
 
 	switch ($_DVWA['SQLI_DB']) {
-		case MYSQL:
-			// Check database
-			$query  = "SELECT first_name, last_name FROM users WHERE user_id = '$id';";
-			$result = mysqli_query($GLOBALS["___mysqli_ston"],  $query ) or die( '<pre>' . ((is_object($GLOBALS["___mysqli_ston"])) ? mysqli_error($GLOBALS["___mysqli_ston"]) : (($___mysqli_res = mysqli_connect_error()) ? $___mysqli_res : false)) . '</pre>' );
+case MYSQL:
+    // Prepare the SQL statement
+    $query = "SELECT first_name, last_name FROM users WHERE user_id = ?;";
 
-			// Get results
-			while( $row = mysqli_fetch_assoc( $result ) ) {
-				// Get values
-				$first = $row["first_name"];
-				$last  = $row["last_name"];
+    $stmt = mysqli_prepare($GLOBALS["___mysqli_ston"], $query);
 
-				// Feedback for end user
-				$html .= "<pre>ID: {$id}<br />First name: {$first}<br />Surname: {$last}</pre>";
-			}
+    if (!$stmt) {
+        die("Error preparing query: " . mysqli_error($GLOBALS["___mysqli_ston"]));
+    }
 
-			mysqli_close($GLOBALS["___mysqli_ston"]);
-			break;
+    // Bind user ID as an integer
+    mysqli_stmt_bind_param($stmt, "i", $id);
+
+    // Execute the prepared statement
+    mysqli_stmt_execute($stmt);
+
+    // Get results
+    $result = mysqli_stmt_get_result($stmt);
+
+    // Display results
+    while ($row = mysqli_fetch_assoc($result)) {
+        $first = $row["first_name"];
+        $last = $row["last_name"];
+
+        $html .= "<pre>ID: {$id}<br />First name: {$first}<br />Surname: {$last}</pre>";
+    }
+
+    mysqli_stmt_close($stmt);
+    mysqli_close($GLOBALS["___mysqli_ston"]);
+    break;
 		case SQLITE:
 			global $sqlite_db_connection;
 
