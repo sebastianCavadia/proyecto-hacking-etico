@@ -14,7 +14,46 @@ Esto puede permitir que un atacante altere la lógica de la consulta y acceda a 
 - Archivo vulnerable: `vulnerabilities/sqli/source/low.php`.
 - Tecnología: PHP y MySQL.
 
-## 3. Explotación en el entorno de pruebas
+## 3. Causa de la vulnerabilidad
+
+La vulnerabilidad se origina en la construcción dinámica de una consulta SQL mediante la concatenación directa de datos proporcionados por el usuario.
+
+En el archivo `vulnerabilities/sqli/source/low.php`, la aplicación recibe el parámetro `id` mediante `$_REQUEST['id']` y lo incorpora directamente en la consulta:
+
+```php
+$id = $_REQUEST['id'];
+$query = "SELECT first_name, last_name FROM users WHERE user_id = '$id';";
+```
+
+El problema es que la entrada del usuario no se separa de las instrucciones SQL mediante parámetros vinculados. Como consecuencia, un atacante puede introducir caracteres y expresiones SQL que alteren la lógica original de la consulta.
+
+## 4. Clasificación OWASP
+
+- Estándar: OWASP Top 10:2025.
+- Categoría: A05:2025 – Injection (Inyección).
+- Vulnerabilidad específica: SQL Injection.
+- Identificador CWE: CWE-89 – Improper Neutralization of Special Elements used in an SQL Command.
+
+Esta vulnerabilidad pertenece a la categoría de inyección porque los datos proporcionados por el usuario pueden ser interpretados como parte de las instrucciones ejecutadas por la base de datos.
+
+## 5. Impacto y riesgo
+
+La explotación de esta vulnerabilidad puede comprometer la confidencialidad, integridad y disponibilidad de la información almacenada en la base de datos.
+
+En las pruebas realizadas sobre DVWA se comprobó que era posible alterar la condición de búsqueda y recuperar cinco registros de usuarios en lugar de únicamente el registro solicitado.
+
+En un entorno real, dependiendo de los privilegios de la cuenta de base de datos y de las operaciones disponibles, esta vulnerabilidad podría ocasionar:
+
+- Acceso no autorizado a información de otros usuarios.
+- Exposición de datos personales o confidenciales.
+- Modificación o eliminación no autorizada de registros.
+- Compromiso de la integridad de la información.
+
+El impacto concreto depende de los permisos de la conexión a la base de datos y de las funcionalidades expuestas por la aplicación.
+
+El riesgo principal identificado en esta práctica es la posibilidad de acceder a registros que no corresponden a la consulta solicitada mediante la manipulación de la entrada del usuario.
+
+## 6. Explotación en el entorno de pruebas
 
 Se introdujo el valor `1` en el campo de búsqueda, obteniendo el registro correspondiente al usuario administrador.
 
@@ -26,7 +65,7 @@ La aplicación devolvió cinco registros de usuarios, demostrando que era posibl
 
 **Evidencia:** versión vulnerable.
 
-## 4. Mitigación implementada
+## 7. Mitigación implementada
 
 Se modificó la consulta SQL para utilizar una sentencia preparada mediante las funciones de MySQLi:
 
@@ -37,7 +76,7 @@ Se modificó la consulta SQL para utilizar una sentencia preparada mediante las 
 
 El parámetro se vinculó como un entero (`i`), evitando que el contenido introducido se interprete como parte de la estructura SQL.
 
-## 5. Validación
+## 8. Validación
 
 Se realizaron nuevamente dos pruebas:
 
@@ -46,9 +85,9 @@ Se realizaron nuevamente dos pruebas:
 
 Los resultados permiten comprobar que el payload utilizado ya no altera la lógica de la consulta en la ruta MySQL probada.
 
-## 6. Evidencias
+## 9. Evidencias
 
-### 6.1. Versión vulnerable
+### 9.1. Versión vulnerable
 
 **Consulta normal:**
 
@@ -58,7 +97,7 @@ Los resultados permiten comprobar que el payload utilizado ya no altera la lógi
 
 ![Inyección SQL en la versión vulnerable](../../evidencias/sql-injection/vulnerable/02-inyeccion-vulnerable.png)
 
-### 6.2. Versión mitigada
+### 9.2. Versión mitigada
 
 **Consulta normal después de la mitigación:**
 
@@ -68,7 +107,7 @@ Los resultados permiten comprobar que el payload utilizado ya no altera la lógi
 
 ![Intento de inyección SQL en la versión mitigada](../../evidencias/sql-injection/mitigada/02-inyeccion-mitigada.png)
 
-## 7. Conclusión
+## 10. Conclusión
 
 La implementación de consultas preparadas permitió mitigar la vulnerabilidad SQL Injection en la rama MySQL del módulo analizado de DVWA. Las pruebas posteriores demostraron que la consulta normal continúa funcionando y que el payload utilizado durante la explotación ya no permite recuperar múltiples registros.
 
